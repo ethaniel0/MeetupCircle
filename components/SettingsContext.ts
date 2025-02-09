@@ -41,7 +41,6 @@ export function useSettings(): SettingsContextProps{
     const [friends, setFriends] = useState<string[]>([]);
 
     async function requestNewUsername(new_username: string, new_profile_picture: string){
-        console.log('requesting username')
         let resp = await fetch(URL + '/enroll', {
             method: 'POST',
             headers: {
@@ -53,16 +52,16 @@ export function useSettings(): SettingsContextProps{
             })
         });
         let json = await resp.json();
-        console.log('JSON:', json)
-        if ('profile_img' in json){
+        console.log("maybe here", json)
+        // if ('profile_img' in json){
+            console.log("maybe here2")
             setUsername(json.username);
-            setProfileImage(json.profile_img)
+            setProfileImage(json.profile_img || "")
             AsyncStorage.setItem('username', json.username)
-        }        
+        // }        
     }
 
     async function addFriend(friend: string, distance: number){
-        console.log('adding friend')
         if (friends.includes(friend)) return;
         let resp = await fetch(URL + '/friend', {
             method: 'POST',
@@ -76,7 +75,6 @@ export function useSettings(): SettingsContextProps{
             })
         });
         let json = await resp.json();
-        console.log('JSON', json)
         if (json.message == 'Friend added'){
             setFriends(f => [...f, json.friend_username])
         }
@@ -99,6 +97,28 @@ export function useSettings(): SettingsContextProps{
     }
 
     useEffect(() => {
+
+        async function loadFriends(){
+            let resp = await fetch(URL + '/all_friends', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username
+                })
+            });
+            let json = await resp.json();
+            if ('friends' in json){
+                let friendlist = json['friends'].map((f: any) => f.username);
+                let friendSet = new Set(friendlist);
+                let existingFriendSet = new Set(friends);
+                if (friendSet.difference(existingFriendSet).size == 0){
+                    setFriends(json['friends'].map((f: any) => f.username))
+                }
+            }
+        }
+
         async function getStorage(){
             try {
                 const value = await AsyncStorage.getItem('username');
@@ -120,6 +140,7 @@ export function useSettings(): SettingsContextProps{
                     }
                     else {
                         setUsername("")
+                        setFriends([])
                     }
                     
                     resp = await fetch(URL + '/all_friends', {
@@ -132,13 +153,11 @@ export function useSettings(): SettingsContextProps{
                         })
                     });
                     json = await resp.json();
-                    console.log('friends settings json:', json)
                     if ('friends' in json){
                         let friendlist = json['friends'].map((f: any) => f.username);
                         let friendSet = new Set(friendlist);
                         let existingFriendSet = new Set(friends);
                         if (friendSet.difference(existingFriendSet).size == 0){
-                            console.log('NEW FRIENDS');
                             setFriends(json['friends'].map((f: any) => f.username))
                         }
                     }
@@ -148,7 +167,7 @@ export function useSettings(): SettingsContextProps{
         getStorage();
 
 
-        let interval = setInterval(getStorage, 5000);
+        let interval = setInterval(loadFriends, 5000);
 
         return () => clearInterval(interval);
     }, [])

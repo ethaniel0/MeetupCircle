@@ -69,6 +69,7 @@ export default function TabTwoScreen() {
             <Pressable
                 onPress={() => {
                   ctx.requestNewUsername(username, img)
+                  console.log('req ', username, img)
                 }}
                 style={{padding: 10, backgroundColor: 'rgb(154, 170, 243)', marginTop: 10, width: '50%', borderRadius: 6}}
               >
@@ -78,15 +79,15 @@ export default function TabTwoScreen() {
         }
 
         <View style={{marginTop: 20, marginBottom: 50}}>
-          <Text style={{color: 'gray', marginBottom: 1}}>Friends</Text>
+          <Text style={{color: 'gray', marginBottom: 10}}>Friends</Text>
           <View style={{gap: 10}}>
             {
               ctx.friends.map((f, i) => (
-                <View key={i} style={{flexDirection: 'row', gap: 20, alignItems: 'center'}}>
-                  <Text style={{width: '25%'}}>{f}</Text>
+                <View key={i} style={styles.friendBox}>
+                  <Text style={{width: '75%'}}>{f}</Text>
                   <Pressable
                     onPress={() => ctx.removeFriend(f)}
-                    style={{backgroundColor: 'rgb(239, 133, 133)', padding: 5}}
+                    style={styles.removeButton}
                   >
                     <Text>Remove</Text>
                   </Pressable>
@@ -155,5 +156,23 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     gap: 8,
+  },
+  removeButton: {
+    backgroundColor: 'rgb(239, 133, 133)', 
+    padding: 5, 
+    borderRadius: 6,
+  },
+  friendBox: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0', 
+    padding: 10, 
+    marginBottom: 15, 
+    borderRadius: 10, 
+    shadowColor: '#000', 
+    shadowOpacity: 0.1, 
+    shadowRadius: 5, 
+    elevation: 5,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 });

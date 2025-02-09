@@ -7,6 +7,7 @@ const URL = 'http://172.28.57.247:5069'
 export interface Friend {
     name: string
     distance: number
+    distanceBetween: number
     withinDistance: boolean
     profileImageURL: string
 }
@@ -19,92 +20,215 @@ export const FriendContext = createContext<FriendContextProps>({
     friends: []
 })
 
-export function useFriendLocationFinder(): Friend[]{
+// export function useFriendLocationFinder(): Friend[]{
+//     const [friends, setFriends] = useState<Friend[]>([]);
+//     const [locationGranted, setLocationGranted] = useState<boolean>(false);
+//     const [location, setLocation] = useState<Location.LocationObject | null>(null);
+//     const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+//     const settings = useContext(SettingsContext);
+
+
+//     useEffect(() => {
+//         async function getLocationPermissions() {
+//             console.log("here")
+//             // const { status } = await Location.requestBackgroundPermissionsAsync();
+//             // setLocationGranted(status === "granted");
+//             // const location = await Location.getCurrentPositionAsync({});
+//             const location: Location.LocationObject = {
+//                 coords: {
+//                     latitude: 40.7128,  // NYC Latitude
+//                     longitude: -74.0060, // NYC Longitude
+//                     altitude: 10,        // Approximate altitude (in meters)
+//                     accuracy: 5,         // Accuracy in meters
+//                     altitudeAccuracy: 5,
+//                     heading: 0,          // No movement
+//                     speed: 0,            // No movement
+//                 },
+//                 timestamp: Date.now(), // Current timestamp
+//             };
+            
+//             setLocation(location);
+//             console.log("set location")
+    
+//             intervalRef.current = setInterval(async () => {
+//                 const location = await Location.getCurrentPositionAsync({});
+//                 setLocation(location);
+
+//                 console.log('sending location', location)
+
+//                 fetch(URL + '/location', 
+//                     {
+//                         method: 'POST',
+//                         headers: {
+//                             'content-type': 'application/json'
+//                         },
+//                         body: JSON.stringify({
+//                             username: settings.username,
+//                             lat: location.coords.latitude,
+//                             lon: location.coords.longitude
+//                         })
+//                     }
+//                 );
+
+//                 console.log('FRIENDS:', settings.friends, settings.username)
+
+//                 for (let friend of settings.friends){
+//                     console.log('calling friend info', friend)
+//                     fetch(URL + '/friend_info', {
+//                         method: 'POST',
+//                         headers: {
+//                             'content-type': 'application/json'
+//                         },
+//                         body: JSON.stringify({
+//                             username: settings.username,
+//                             friend_username: friend
+//                         })
+//                     }).then(resp => {return resp.json()}).then((json: any) => {
+//                         console.log('FRIEND_INFO', json);
+//                         if (json.message == "Friend not found") return;
+
+//                         setFriends((fs) => {
+//                             let ffs: Friend[] = []
+//                             for (let f of fs){
+//                                 if (f.name != friend) ffs.push(f);
+//                                 else {
+//                                     ffs.push({
+//                                         name: json.friend_username,
+//                                         distance: json.distance,
+//                                         withinDistance: json.is_within,
+//                                         profileImageURL: json.profile_img
+//                                     })
+//                                 }
+//                             }
+//                             return ffs
+//                         })
+
+//                     });
+//                 }
+
+                
+//             }, 5000);
+    
+//         }
+
+//         getLocationPermissions()
+
+//         console.log("got locarion permissions")
+
+//         return () => {
+//             if (intervalRef.current) {
+//                 clearInterval(intervalRef.current);
+//                 intervalRef.current = null;
+//             }
+//         }
+//     }, [])
+
+//     return friends
+// }
+
+export function useFriendLocationFinder(): Friend[] {
     const [friends, setFriends] = useState<Friend[]>([]);
-    const [locationGranted, setLocationGranted] = useState<boolean>(false);
     const [location, setLocation] = useState<Location.LocationObject | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
     const settings = useContext(SettingsContext);
 
-
     useEffect(() => {
-        async function getLocationPermissions() {
-            const { status } = await Location.requestBackgroundPermissionsAsync();
-            setLocationGranted(status === "granted");
-            const location = await Location.getCurrentPositionAsync({});
+        (async () => {  // ✅ Use IIFE inside useEffect
+            console.log("here");
+            
+            // Mock NYC location
+            const location: Location.LocationObject = {
+                coords: {
+                    latitude: 40.7128,
+                    longitude: -74.0060,
+                    altitude: 10,
+                    accuracy: 5,
+                    altitudeAccuracy: 5,
+                    heading: 0,
+                    speed: 0,
+                },
+                timestamp: Date.now(),
+            };
+
             setLocation(location);
-    
+            console.log("set location");
+
+            //Ensure interval starts
             intervalRef.current = setInterval(async () => {
-                const location = await Location.getCurrentPositionAsync({});
-                setLocation(location);
+                console.log("Fetching new location...");
+                // const newLocation = await Location.getCurrentPositionAsync({});
+                const newLocation: Location.LocationObject = {
+                    coords: {
+                        latitude: 40.7128,
+                        longitude: -74.0060,
+                        altitude: 10,
+                        accuracy: 5,
+                        altitudeAccuracy: 5,
+                        heading: 0,
+                        speed: 0,
+                    },
+                    timestamp: Date.now(),
+                };
+                setLocation(newLocation);
 
-                console.log('sending location', location)
+                // console.log('sending location', newLocation);
 
-                fetch(URL + '/location', 
-                    {
+                await fetch(URL + '/location', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        username: settings.username,
+                        lat: newLocation.coords.latitude,
+                        lon: newLocation.coords.longitude
+                    })
+                });
+
+                console.log('FRIENDS:', settings.friends, settings.username);
+
+                let updatedFriends = []
+
+                for (let friend of settings.friends) {
+                    console.log('calling friend info', friend);
+                    let resp = await fetch(URL + '/friend_info', {
                         method: 'POST',
-                        headers: {
-                            'content-type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            username: settings.username,
-                            lat: location.coords.latitude,
-                            lon: location.coords.longitude
-                        })
-                    }
-                );
-
-                console.log('FRIENDS:', settings.friends, settings.username)
-
-                for (let friend of settings.friends){
-                    console.log('calling friend info', friend)
-                    fetch(URL + '/friend_info', {
-                        method: 'POST',
-                        headers: {
-                            'content-type': 'application/json'
-                        },
+                        headers: { 'content-type': 'application/json' },
                         body: JSON.stringify({
                             username: settings.username,
                             friend_username: friend
                         })
-                    }).then(resp => {return resp.json()}).then((json: any) => {
-                        console.log('FRIEND_INFO', json);
-                        if (json.message == "Friend not found") return;
-
-                        setFriends((fs) => {
-                            let ffs: Friend[] = []
-                            for (let f of fs){
-                                if (f.name != friend) ffs.push(f);
-                                else {
-                                    ffs.push({
-                                        name: json.friend_username,
-                                        distance: json.distance,
-                                        withinDistance: json.is_within,
-                                        profileImageURL: json.profile_img
-                                    })
-                                }
-                            }
-                            return ffs
-                        })
-
                     });
+                    let json = await resp.json();
+
+
+                    console.log('FRIEND_INFO', json.username);
+                    if (json.message === "Friend not found") continue;
+
+                    console.log(settings.username, 'FRIEND JSON:')
+
+                    console.log("I guess we have friends", json)
+                    updatedFriends.push({
+                        name: json.username,
+                        distance: json.distance,
+                        distanceBetween: json.distance_between,
+                        withinDistance: json.is_within,
+                        profileImageURL: json.profile_img
+                    });
+                    
                 }
-
-                
+                setFriends(updatedFriends);
             }, 5000);
-    
-        }
+        })();
 
-        getLocationPermissions()
+        console.log("got location permissions");
 
         return () => {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
                 intervalRef.current = null;
             }
-        }
-    }, [settings.friends])
+        };
+    }, []); // ✅ Run only once on mount
 
-    return friends
+    return friends;
 }
