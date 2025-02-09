@@ -3,12 +3,13 @@ import { Image, StyleSheet, Platform, ScrollView} from 'react-native';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { FriendContext } from '@/components/FriendListener';
+import { FriendContext, useFriendLocationFinder } from '@/components/FriendListener';
 import { useContext } from 'react';
 import { View, Text } from 'react-native';
 
 export default function HomeScreen() {
-  const context = useContext(FriendContext);
+
+  const friends = useFriendLocationFinder();
   
   return (
     <ParallaxScrollView
@@ -26,7 +27,7 @@ export default function HomeScreen() {
 
       <View style={styles.backgroundContainer} />
       <ScrollView style={styles.friendsList}>
-        {context.friends.sort((a, b) => a.distance - b.distance).map((f, i) => (
+        {friends.sort((a, b) => a.distance - b.distance).map((f, i) => (
             <View key={i} style={styles.friendBox}>
               <View style={styles.imageContainer}>
                 <Image
@@ -38,7 +39,7 @@ export default function HomeScreen() {
               <View style={styles.textContainer}>
                 <Text style={styles.friendName}>{f.name}</Text>
                 <Text style={[styles.friendDistance, { color: f.withinDistance ? 'green' : 'black' }]}>
-                  {f.distance}mi
+                  {f.distance}m
                 </Text>
               </View>
             </View>
@@ -80,7 +81,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: 'rgb(175, 255, 180)',
-    backgroundImage: 'url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTul-beiHbU34rjfj5iAN8NssRCuru8CHMxSw&s")',
     backgroundRepeat: 'repeat',
     zIndex: -1,
   },

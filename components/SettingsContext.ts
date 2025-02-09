@@ -2,7 +2,7 @@ import { createContext, useEffect, useRef, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-const URL = 'http://10.197.185.73:5069'
+const URL = 'http://172.28.57.247:5069'
 
 
 export interface Friend {
@@ -22,13 +22,17 @@ export interface SettingsContextProps {
     profileImage: string
     friends: string[]
     requestNewUsername: (name: string, prof_pic: string) => void
+    addFriend: (name: string, distance: number) => void
+    removeFriend: (name: string) => void
 }
 
 export const SettingsContext = createContext<SettingsContextProps>({
     username: '',
     profileImage: '',
     friends:  [],
-    requestNewUsername: (name: string, prof_pic: string) => {}
+    requestNewUsername: (name: string, prof_pic: string) => {},
+    addFriend: (name: string, distance: number) => {},
+    removeFriend: (name: string) => {}
 })
 
 export function useSettings(): SettingsContextProps{
@@ -36,21 +40,62 @@ export function useSettings(): SettingsContextProps{
     const [profileImage, setProfileImage] = useState<string>('');
     const [friends, setFriends] = useState<string[]>([]);
 
-   
     async function requestNewUsername(new_username: string, new_profile_picture: string){
+        console.log('requesting username')
         let resp = await fetch(URL + '/enroll', {
             method: 'POST',
+            headers: {
+                'content-type': 'application/json'
+            },
             body: JSON.stringify({
                 username: new_username,
                 profile_img: new_profile_picture
             })
         });
         let json = await resp.json();
+        console.log('JSON:', json)
         if ('profile_img' in json){
             setUsername(json.username);
             setProfileImage(json.profile_img)
             AsyncStorage.setItem('username', json.username)
         }        
+    }
+
+    async function addFriend(friend: string, distance: number){
+        console.log('adding friend')
+        if (friends.includes(friend)) return;
+        let resp = await fetch(URL + '/friend', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: username,
+                friend_username: friend,
+                distance
+            })
+        });
+        let json = await resp.json();
+        console.log('JSON', json)
+        if (json.message == 'Friend added'){
+            setFriends(f => [...f, json.friend_username])
+        }
+    }
+
+    async function removeFriend(friend: string){
+        if (!friends.includes(friend)) return;
+
+        let resp = await fetch(URL + '/unfriend', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: username,
+                friend_username: friend
+            })
+        });
+        setFriends(friends.filter(f => f != friend));
     }
 
     useEffect(() => {
@@ -62,6 +107,9 @@ export function useSettings(): SettingsContextProps{
 
                     let resp = await fetch(URL + '/user_info', {
                         method: 'POST',
+                        headers: {
+                            'content-type': 'application/json'
+                        },
                         body: JSON.stringify({
                             username: value
                         })
@@ -70,24 +118,41 @@ export function useSettings(): SettingsContextProps{
                     if ('profile_img' in json){
                         setProfileImage(json.profile_img)
                     }
+                    else {
+                        setUsername("")
+                    }
                     
                     resp = await fetch(URL + '/all_friends', {
                         method: 'POST',
+                        headers: {
+                            'content-type': 'application/json'
+                        },
                         body: JSON.stringify({
                             username: value
                         })
                     });
                     json = await resp.json();
+                    console.log('friends settings json:', json)
                     if ('friends' in json){
-                        setFriends(json['friends'].map((f: any) => f.username))
+                        let friendlist = json['friends'].map((f: any) => f.username);
+                        let friendSet = new Set(friendlist);
+                        let existingFriendSet = new Set(friends);
+                        if (friendSet.difference(existingFriendSet).size == 0){
+                            console.log('NEW FRIENDS');
+                            setFriends(json['friends'].map((f: any) => f.username))
+                        }
                     }
                 }
             } catch (error) {}
         }
-
         getStorage();
+
+
+        let interval = setInterval(getStorage, 5000);
+
+        return () => clearInterval(interval);
     }, [])
 
-    return {username, friends, profileImage, requestNewUsername}
+    return {username, friends, profileImage, requestNewUsername, addFriend, removeFriend}
 
 }

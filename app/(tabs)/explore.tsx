@@ -14,6 +14,9 @@ export default function TabTwoScreen() {
   const [username, setUsername] = useState(ctx.username);
   const [img, setImg] = useState(ctx.profileImage)
 
+  const [friendUsername, setFriendUsername] = useState('')
+  const [friendDistance, setFriendDistance] = useState('100')
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
@@ -82,7 +85,7 @@ export default function TabTwoScreen() {
                 <View key={i} style={{flexDirection: 'row', gap: 20, alignItems: 'center'}}>
                   <Text style={{width: '25%'}}>{f}</Text>
                   <Pressable
-                    onPress={() => {}}
+                    onPress={() => ctx.removeFriend(f)}
                     style={{backgroundColor: 'rgb(239, 133, 133)', padding: 5}}
                   >
                     <Text>Remove</Text>
@@ -92,11 +95,44 @@ export default function TabTwoScreen() {
             }
 
             <Pressable
-              onPress={() => {}}
+              onPress={() => {
+                ctx.addFriend(friendUsername, parseFloat(friendDistance))
+              }}
               style={{backgroundColor: 'rgb(154, 170, 243)', padding: 10, borderRadius: 6}}
             >
               <Text style={{textAlign: 'center'}}>Add Friend</Text>
             </Pressable>
+
+            <View>
+              <Text style={{color: 'gray', marginBottom: 1}}>Friend Username</Text>
+              <TextInput
+                style={{
+                  borderColor: 'black',
+                  borderWidth: 2,
+                  padding: 6,
+                  borderRadius: 6
+                }}
+                onChangeText={setFriendUsername}
+                value={friendUsername}
+                placeholder="Friend Username"
+              />
+            </View>
+
+            <View>
+              <Text style={{color: 'gray', marginBottom: 1}}>Friend Distance Threshold (meters)</Text>
+              <TextInput
+                style={{
+                  borderColor: 'black',
+                  borderWidth: 2,
+                  padding: 6,
+                  borderRadius: 6
+                }}
+                onChangeText={setFriendDistance}
+                value={friendDistance}
+                placeholder="Friend Username"
+                keyboardType="numeric"
+              />
+            </View>
 
           </View>
 
