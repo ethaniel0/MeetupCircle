@@ -1,64 +1,66 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Image, StyleSheet, Platform, ScrollView} from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { FriendContext } from '@/components/FriendListener';
+import { useContext } from 'react';
+import { View, Text } from 'react-native';
 
 export default function HomeScreen() {
+  const context = useContext(FriendContext);
+  
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
       headerImage={
         <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+          source={require('@/assets/images/friend-tracker-header.png')}
+          style={styles.titleImage}
         />
       }>
+      
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
+        <ThemedText type="title">Friends</ThemedText>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
+
+      <View style={styles.backgroundContainer} />
+      <ScrollView style={styles.friendsList}>
+        {context.friends.sort((a, b) => a.distance - b.distance).map((f, i) => (
+            <View key={i} style={styles.friendBox}>
+              <View style={styles.imageContainer}>
+                <Image
+                  source={{ uri: f.profileImageURL }}
+                  style={styles.profileImage}
+                />
+              </View>
+          
+              <View style={styles.textContainer}>
+                <Text style={styles.friendName}>{f.name}</Text>
+                <Text style={[styles.friendDistance, { color: f.withinDistance ? 'green' : 'black' }]}>
+                  {f.distance}mi
+                </Text>
+              </View>
+            </View>
+        ))}
+      </ScrollView>
+
     </ParallaxScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  titleImage: {
+    overflow: 'hidden',     
+    width: '100%', 
+    height: '100%',
+    resizeMode: 'cover',
+  },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    backgroundColor: 'transparent'
   },
   stepContainer: {
     gap: 8,
@@ -71,4 +73,57 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
   },
+  backgroundContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgb(175, 255, 180)',
+    backgroundImage: 'url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTul-beiHbU34rjfj5iAN8NssRCuru8CHMxSw&s")',
+    backgroundRepeat: 'repeat',
+    zIndex: -1,
+  },
+  friendsList: {
+    padding: 10, 
+  },
+  friendBox: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0', 
+    padding: 20, 
+    marginBottom: 15, 
+    borderRadius: 10, 
+    shadowColor: '#000', 
+    shadowOpacity: 0.1, 
+    shadowRadius: 5, 
+    elevation: 5, 
+    alignItems: 'center', 
+  },
+  imageContainer: {
+    width: 50,
+    height: 50, 
+    borderRadius: 25, 
+    backgroundColor: 'blue',
+    overflow: 'hidden', 
+    marginRight: 15, 
+  },
+  profileImage: {
+    width: '100%', 
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  textContainer: {
+    flex: 1,
+  },
+  friendName: {
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    color: '#333',
+  },
+  friendDistance: {
+    fontSize: 18, 
+    marginTop: 5, 
+    color: '#000', 
+  }  
 });
+
