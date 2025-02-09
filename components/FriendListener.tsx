@@ -130,28 +130,50 @@ export const FriendContext = createContext<FriendContextProps>({
 export function useFriendLocationFinder(): Friend[] {
     const [friends, setFriends] = useState<Friend[]>([]);
     const [location, setLocation] = useState<Location.LocationObject | null>(null);
+    const [locationGranted, setLocationGranted] = useState<boolean>(true);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const intervalRef2 = useRef<NodeJS.Timeout | null>(null);
     const settings = useContext(SettingsContext);
 
     useEffect(() => {
-        (async () => {  // ✅ Use IIFE inside useEffect
-            console.log("here");
-            
-            // Mock NYC location
-            const location: Location.LocationObject = {
-                coords: {
-                    latitude: 40.7128,
-                    longitude: -74.0060,
-                    altitude: 10,
-                    accuracy: 5,
-                    altitudeAccuracy: 5,
-                    heading: 0,
-                    speed: 0,
-                },
-                timestamp: Date.now(),
-            };
 
+        async function getLocationPermissions() {
+            const { status } = await Location.requestBackgroundPermissionsAsync();
+            setLocationGranted(status === "granted");
+            const location = await Location.getCurrentPositionAsync({});
             setLocation(location);
+
+            intervalRef2.current = setInterval(async () => {
+                if (!locationGranted){
+                    console.log('NEW YORK')
+                    const location: Location.LocationObject = {
+                        coords: {
+                            latitude: 40.7128,  // NYC Latitude
+                            longitude: -74.0060, // NYC Longitude
+                            altitude: 10,        // Approximate altitude (in meters)
+                            accuracy: 5,         // Accuracy in meters
+                            altitudeAccuracy: 5,
+                            heading: 0,          // No movement
+                            speed: 0,            // No movement
+                        },
+                        timestamp: Date.now(), // Current timestamp
+                    };
+                    setLocation(location)
+                }
+                else{
+                    console.log('LOCATION GRANTED')
+                    const location = await Location.getCurrentPositionAsync({});
+                    setLocation(location);
+                }
+            }, 5000);
+
+        }
+        getLocationPermissions();
+
+
+        (async () => {  // ✅ Use IIFE inside useEffect
+
+            // setLocation(location);
             console.log("set location");
 
             //Ensure interval starts
@@ -201,12 +223,12 @@ export function useFriendLocationFinder(): Friend[] {
                     let json = await resp.json();
 
 
-                    console.log('FRIEND_INFO', json.username);
+                    console.log('FRIEND_INFO', json.username, json.message);
                     if (json.message === "Friend not found") continue;
 
                     console.log(settings.username, 'FRIEND JSON:')
 
-                    console.log("I guess we have friends", json)
+                    console.log("I guess we have friends", json.map((f: any) => f.username))
                     updatedFriends.push({
                         name: json.username,
                         distance: json.distance,
@@ -226,6 +248,10 @@ export function useFriendLocationFinder(): Friend[] {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
                 intervalRef.current = null;
+            }
+            if (intervalRef2.current){
+                clearInterval(intervalRef2.current)
+                intervalRef2.current = null
             }
         };
     }, []); // ✅ Run only once on mount

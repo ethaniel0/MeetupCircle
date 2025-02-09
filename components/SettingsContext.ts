@@ -98,7 +98,10 @@ export function useSettings(): SettingsContextProps{
 
     useEffect(() => {
 
+        const areSetsEqual = (setA: Set<string>, setB: Set<string>) => setA.size === setB.size && [...setA].every(value => setB.has(value))
+
         async function loadFriends(){
+            console.log('loading friends for A')
             let resp = await fetch(URL + '/all_friends', {
                 method: 'POST',
                 headers: {
@@ -111,10 +114,11 @@ export function useSettings(): SettingsContextProps{
             let json = await resp.json();
             if ('friends' in json){
                 let friendlist = json['friends'].map((f: any) => f.username);
-                let friendSet = new Set(friendlist);
-                let existingFriendSet = new Set(friends);
-                if (friendSet.difference(existingFriendSet).size == 0){
-                    setFriends(json['friends'].map((f: any) => f.username))
+                let friendSet: Set<string> = new Set<string>(friendlist);
+                let existingFriendSet = new Set<string>(friends);
+                if (!areSetsEqual(friendSet, existingFriendSet)){
+                    setFriends(friendlist)
+                    console.log('SETTING FRIENDS', username, friendlist, existingFriendSet)
                 }
             }
         }

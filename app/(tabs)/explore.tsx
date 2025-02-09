@@ -3,7 +3,6 @@ import { StyleSheet, Image, Platform, TextInput, Text, ScrollView, View, Button,
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useContext, useState } from 'react';
 import { SettingsContext } from '@/components/SettingsContext';
 
